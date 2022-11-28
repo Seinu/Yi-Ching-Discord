@@ -1,0 +1,2 @@
+#!/bin/zsh
+for file in *; convert $file -verbose -resize 180x180 -quality 100 $file
