@@ -15,12 +15,13 @@ import cv2
 from gtts import gTTS
 import subprocess
 import os, wave
-
+from moviepy.editor import *
 import numpy as np
 
 cnt = 0
 def cleanup():
     os.system("rm output.mp4")
+    os.system("rm movie.mp4")
     os.system("rm 1.mp3")
     os.system("rm 2.mp3")
     os.system("rm 1.ts")
@@ -65,8 +66,8 @@ def dict_factory(cursor, row):
         d[col[0]] = row[idx]
     return d
 
-def get_read():
-    global id
+def get_read(id):
+    
     con = sqlite3.connect('iching.db')
     con.row_factory = dict_factory
     cur = con.cursor()
@@ -75,7 +76,7 @@ def get_read():
     dct = res.fetchone()
     print(dct['name']+"\nThe Judgement of "+dct['name']+" is " +dct['judgement']+"\nThe Image of "+dct['name']+" is " +dct['image']+"")
 
-    return dct['name']+"\nThe Judgement of hexagram "+str(id)+" "+dct['name']+" is " +dct['judgement']+"\nThe image of hexagram "+str(id)+" "+dct['name']+" is " +dct['image']+""
+    return dct['name']+"\nThe Judgement of hexagram "+str(id)+" "+dct['name']+" is " +dct['judgement']+"\nThe image of hexagram "+str(id)+" "+dct['name']+" is " +dct['image']+" I hope you enjoyed your reading. Until next time, Love is the law, love under will............"
 
 def coin_flip():
     c_list = []
@@ -383,26 +384,27 @@ async def yarrow(ctx):
 
 @bot.command()
 async def yiching(ctx):
-    cnt = 0
-    global id
-    hexagram_lst = []
-    lst = yarrow_calc()
+    # cnt = 0
+    # global id
+    # hexagram_lst = []
+    # lst = yarrow_calc()
 
-    hexagram_lst.append(yarrow_line(lst))
-    for x in range(5):
-        global id
-        lst = yarrow_calc()
-        hexagram_lst.append(yarrow_line(lst))
-        print(hexagram_lst)
-        gen_hexagram(hexagram_lst)
-
-    print(get_read())
+    # hexagram_lst.append(yarrow_line(lst))
+    # for x in range(5):
+    #     global id
+    #     lst = yarrow_calc()
+    #     hexagram_lst.append(yarrow_line(lst))
+    #     print(hexagram_lst)
+    #     gen_hexagram(hexagram_lst)
+    
+    id = random.randrange(1,65)
+    print(get_read(id))
     cleanup()
     tts = gTTS("Welcome to Yi Ching, today we will ask the yi ching about the future...  ", lang='en')
     tts.save("1.mp3")
     #subprocess.run(["ffmpeg", "-i", "", "-i","1.mp3", "-shortist", "-vcodec", "libx264", "1.mp4"])
     subprocess.run(["ffmpeg","-ignore_loop", "0", "-i", "./video/intro.gif", "-i", "1.mp3","-map", "0:v:0?", "-map", "1:a:0", "-r", "12.5","-shortest", "1.ts"])
-    tts = gTTS("Your reading is hexagram " +str(id)+ " " + get_read())
+    tts = gTTS("Your reading is hexagram " +str(id)+ " " + get_read(id))
     tts.save("2.mp3")
     # idle_index = 0
     # file_name = "response.wav"
@@ -433,10 +435,14 @@ async def yiching(ctx):
     subprocess.run(["ffmpeg", "-loop", "1", "-y", "-i", "./img/highres/"+str(id)+".png", "-i", "2.mp3","-map", "0:v:0?", "-map", "1:a:0", "-r", "12.5","-shortest", "2.ts"])
     
     #subprocess.run(["mp4box", "-cat", "1.mp4", "-cat", "2.mp4", "output.mp4"])
-    subprocess.run(["ffmpeg", "-i", "concat:1.ts|2.ts", "-c", "copy", "-vcodec", "libx264", "output.mp4"])
+    subprocess.run(["ffmpeg", "-i", "concat:1.ts|2.ts", "-c", "copy", "-vcodec", "libx264", "movie.mp4"])
+    subprocess.run(["ffmpeg", "-i", "movie.mp4","-i", "./flute.wav", "-filter_complex", "amix=inputs=2:duration=first:dropout_transition=0", "-vcodec", "libx264", "output.mp4", "-async", "1", "-y"])
     #ffmpeg -f concat -safe 0 -i mylist.txt -c copy output.mp4
-    
+    # audio1 = AudioFileClip("flute.mp3")
+    # video = VideoFileClip("movie.mp4")
+    # mixed = CompositeVideoClip([audio1,video])
+    # mixed.write_videofile("./output.mp4", fps=15, codec="libx264")
     await ctx.channel.send(file=discord.File('./output.mp4'))
 
 
-bot.run('Discord Bot Token')
+bot.run('discord bot token')
